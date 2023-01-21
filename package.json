@@ -1,0 +1,24 @@
+{
+  "name": "project-webexperience",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "start http://localhost:3010/imagedraw.html && node server/index.mjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/David-Naray/Project-WebExperience.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/David-Naray/Project-WebExperience/issues"
+  },
+  "homepage": "https://github.com/David-Naray/Project-WebExperience#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.12.0"
+  }
+}
