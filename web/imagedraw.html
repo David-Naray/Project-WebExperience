@@ -116,7 +116,7 @@
         constructor(corners) {
             this.corners=corners
         }
-        draw(){
+        drawBounds(){
             const material = new THREE.LineBasicMaterial( { color: 0x0000ff } );
             const points = [];
             points.push( this.corners[0].VoronoiCenter);
@@ -128,35 +128,43 @@
             const geometry = new THREE.BufferGeometry().setFromPoints( points );
             const line = new THREE.Line( geometry, material );
             scene.add(line)
+        }
+        draw(){
+            this.drawBounds()
 
-            //take first corner, its counter part 2 corner[0] to corner[2], corner[1] to corner[3]
-            //accounting for the difference 
             const geometrys = new THREE.BufferGeometry();
 
-            var vertices =[]// new Float32Array( [])
-            //geometrys.setIndex()
+            var vertices =[]
             var indices=[]
 
-            //topleft needs to compare to its right and below corners
-            //bottom right needs to compare to its top and left corners
 
+            //if you know youre dealing with the top left corner you can look for closest valid point within chunk
 
-            //if you know youre dealing with the top left corner you can look for closest valid point
-            //to the right of it, this is the starting coordinate
             var startingCoord=new THREE.Vector3( 0,0, 0 )
             //find leftmost corner     
-            startingCoord.x=(Math.ceil((this.corners[0].VoronoiCenter.x/resolution))*10)*resolution/10
-            startingCoord.z=(Math.ceil((this.corners[0].VoronoiCenter.z/resolution))*10)*resolution/10
+            startingCoord.x=(Math.round((this.corners[0].VoronoiCenter.x/resolution))*10)*resolution/10
+            startingCoord.z=(Math.round((this.corners[0].VoronoiCenter.z/resolution))*10)*resolution/10
             //adjust so these values lie on/between for x, the right corner, for z the corner below
-            
-            
-            console.log(this.corners[0].VoronoiCenter,startingCoord)
+            var numberx=Math.trunc(((Math.round((this.corners[2].VoronoiCenter.x/resolution))*10)*resolution/10-(Math.round((this.corners[0].VoronoiCenter.x/resolution))*10)*resolution/10)*10)
+            var numberz=Math.trunc(((Math.round((this.corners[3].VoronoiCenter.z/resolution))*10)*resolution/10-(Math.round((this.corners[0].VoronoiCenter.z/resolution))*10)*resolution/10)*10)
+            //console.log(numberx)
+
+            const ChunkArea=this.calcArea()//Chunk is a quad, calculate the area of the quad
+            //console.log(ChunkArea)
+            const num_verts=Math.round(ChunkArea/resolution)
+            console.log(ChunkArea,num_verts)
+            //so we can divide this greater area by the smaller and see how many squares fit within
+            //and from that how many points
+            //we can then create a surface with n-many points up to graduating to m-number of grids at the bottom
+            //since the sides of the square are linear we can evenly distribute how wide it gets along the way
+            //we can then apply a transorformation to shift this surface along the z and x axis
+
+            //console.log(this.corners[0].VoronoiCenter,startingCoord)
             //console.log(startingCoord.x<this.corners[0].x) 
             var Coord;
             var i=0
-            //console.log(4%4)
-            for(let r=0; r<40;r++){//should produce an even grid of points starting at the startingCoord
-                for(let h=0;h<40;h++){
+            for(let r=0; r<numberx;r++){//should produce an even grid of points starting at the startingCoord
+                for(let h=0;h<numberz;h++){
                     vertices[i]=r*resolution+startingCoord.x  //first component x?
                     i++
                     vertices[i]=startingCoord.y
@@ -166,40 +174,59 @@
                 }
             }
             var j=0
-            for(let r=0; r<39;r++){//should produce an even grid of points starting at the startingCoord
-                for(let b=0; b<39;b++){//should produce an even grid of points starting at the startingCoord
+            for(let r=0; r<numberx-1;r++){//should produce an even grid of points starting at the startingCoord
+                for(let b=0; b<numberz-1;b++){//should produce an even grid of points starting at the startingCoord
                     //topleft triangle
-                    indices[j]=r*40 +b 
+                    indices[j]=r*numberz +b 
                     j++
-                    indices[j]=r*40+b+1 //row progress(*x per row)
+                    indices[j]=r*numberz+b+1 //row progress(*x per row)
                     j++
-                    indices[j]=r*40+b+40
+                    indices[j]=r*numberz+b+numberz
                     j++
                     //console.log(j)
                     //bottom left triangle
-                    indices[j]=r*40+b+1
+                    indices[j]=r*numberz+b+1
                     j++
-                    indices[j]=r*40+b+41
+                    indices[j]=r*numberz+b+numberz+1
                     j++
-                    indices[j]=r*40+b+40
+                    indices[j]=r*numberz+b+numberz
                     //console.log(j)
                     j++
                 }
             }
+            
+            
+            {//Formation of chunk
             geometrys.setIndex(indices)
             const color = new THREE.Color( 0xffffff );
             color.setHex( Math.random() * 0xffffff );
-
             geometrys.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array( vertices), 3 ) );
             const materialsss = new THREE.MeshBasicMaterial( { color: color,side:THREE.DoubleSide,wireframe: true } );
             const meshss = new THREE.Mesh( geometrys, materialsss );
-
             scene.add(meshss)
-            
-
+            }
         }
+
         unload(){
             console.log("bruh")
+        }
+        calcArea(){
+            //(1/2) ⋅ {(x1y2 + x2y3 + x3y4 + x4y1)  area of triangle ABC, then do ADC
+            //then combine
+            const x1=(this.corners[0].VoronoiCenter.x)//A
+            const z1=(this.corners[0].VoronoiCenter.z)
+
+            const x2=(this.corners[1].VoronoiCenter.x)//B
+            const z2=(this.corners[1].VoronoiCenter.z)
+
+            const x3=(this.corners[3].VoronoiCenter.x)//C
+            const z3=(this.corners[3].VoronoiCenter.z)            
+            
+            const x4=(this.corners[2].VoronoiCenter.x)//D
+            const z4=(this.corners[2].VoronoiCenter.z)
+
+            const ChunkArea=Math.round(((1/2)*((x1*z2+x2*z3+x3*z4+x4*z1)- (x2*z1 + x3*z2 + x4*z3 + x1*z4)))*10)/10
+            return Math.abs(ChunkArea)
         }
 
     }
