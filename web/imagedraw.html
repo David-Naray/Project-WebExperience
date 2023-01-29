@@ -132,35 +132,27 @@
         draw(){
             this.drawBounds()
 
-            const geometrys = new THREE.BufferGeometry();
-
-            var vertices =[]
-            var indices=[]
-
-
-            //if you know youre dealing with the top left corner you can look for closest valid point within chunk
-
             var startingCoord=new THREE.Vector3( 0,0, 0 )
             //find leftmost corner     
             startingCoord.x=(Math.round((this.corners[0].VoronoiCenter.x/resolution))*10)*resolution/10
             startingCoord.z=(Math.round((this.corners[0].VoronoiCenter.z/resolution))*10)*resolution/10
+            //var valid_
+            for(var i=0;i<4;i++){
+
+            }
             //adjust so these values lie on/between for x, the right corner, for z the corner below
             var numberx=Math.trunc(((Math.round((this.corners[2].VoronoiCenter.x/resolution))*10)*resolution/10-(Math.round((this.corners[0].VoronoiCenter.x/resolution))*10)*resolution/10)*10)
             var numberz=Math.trunc(((Math.round((this.corners[3].VoronoiCenter.z/resolution))*10)*resolution/10-(Math.round((this.corners[0].VoronoiCenter.z/resolution))*10)*resolution/10)*10)
             //console.log(numberx)
 
-            const ChunkArea=this.calcArea()//Chunk is a quad, calculate the area of the quad
-            //console.log(ChunkArea)
-            const num_verts=Math.round(ChunkArea/resolution)
-            console.log(ChunkArea,num_verts)
-            //so we can divide this greater area by the smaller and see how many squares fit within
-            //and from that how many points
-            //we can then create a surface with n-many points up to graduating to m-number of grids at the bottom
-            //since the sides of the square are linear we can evenly distribute how wide it gets along the way
-            //we can then apply a transorformation to shift this surface along the z and x axis
 
-            //console.log(this.corners[0].VoronoiCenter,startingCoord)
-            //console.log(startingCoord.x<this.corners[0].x) 
+            //console.log(highest_corner.VoronoiCenter.z,this.corners[0].VoronoiCenter.z,this.corners[2].VoronoiCenter.z)
+
+            this.populateArray()
+
+            {            
+            var vertices =[]
+            var indices=[]
             var Coord;
             var i=0
             for(let r=0; r<numberx;r++){//should produce an even grid of points starting at the startingCoord
@@ -194,9 +186,10 @@
                     j++
                 }
             }
-            
+            }
             
             {//Formation of chunk
+            const geometrys = new THREE.BufferGeometry();
             geometrys.setIndex(indices)
             const color = new THREE.Color( 0xffffff );
             color.setHex( Math.random() * 0xffffff );
@@ -229,6 +222,80 @@
             return Math.abs(ChunkArea)
         }
 
+        populateArray(){
+            //console.log(Math.sign(topdiffz)*(Math.round(Math.abs(topdiffz/resolution)+1)))
+            //const m=Math.sign(topdiffz)*(Math.round(Math.abs(topdiffz/resolution)+1))
+            //const z=Math.sign(topdiffx)*(Math.round(Math.abs(topdiffx/resolution)+1))
+            
+            //starting at the furthest point up, iterating the distance down until completion
+
+            const highestLowest_corners=this.highestLowest();
+            //console.log(highestLowest_corners[0])
+            
+            const chunk_height=Math.round((Math.round(highestLowest_corners[1].VoronoiCenter.z*10))-Math.round(highestLowest_corners[0].VoronoiCenter.z*10))/10
+            
+            const num_width=this.calcDistributions()//how many verts across per row of the chunk height
+
+            //num_width
+                //top diff, you divide by resol and you know how many across per row work down that line
+                //the left side, similarly says how many more or less per row and dictates a new drawing start
+                //the right side adds on to a row or takes away
+                //the bottom, just as the top you have the height and resol, boom
+            
+            
+            
+            //console.log(this.corners[0].VoronoiCenter.x,this.corners[2].VoronoiCenter.x)
+            //console.log(topdiffx,m)
+            //console.log(Math.round(z/m))//if topdiff negative draw left of the highest point, a matter of using the sign
+            
+            {
+            var vertices=[]
+            var i=0;
+            for(var h=0;h<chunk_height;h++){//you are looping the height of the chunk from the highest point to the lowest
+                //then you need to loop over each position in the array as each corresponds to a layer of height
+                //this should match the chunk height, so an array_length is interchangeable
+                for(var w=0;w<num_width[h];w++){
+                    vertices[i]=w*resolution//+startingCoord.x  //first component x?
+                    i++
+                    vertices[i]=startingCoord.y
+                    i++
+                    vertices[i]=h*resolution+highestLowest_corners[0].VoronoiCenter.z//+startingCoord.z
+                    i++ 
+                }
+            }
+            }
+
+        }
+    
+        highestLowest(){
+            var highest_corner;
+            var lowest_corner;
+            if(this.corners[0].VoronoiCenter.z<=this.corners[2].VoronoiCenter.z){
+                highest_corner=this.corners[0]
+            }else{
+                highest_corner=this.corners[2]
+            }
+            if(this.corners[1].VoronoiCenter.z>=this.corners[3].VoronoiCenter.z){
+                lowest_corner=this.corners[1]
+            }else{
+                lowest_corner=this.corners[3]
+            }
+            return [highest_corner,lowest_corner]
+
+        }
+        
+        calcDistributions(){
+            const topdiffz=this.corners[0].VoronoiCenter.z-this.corners[2].VoronoiCenter.z
+            const topdiffx=this.corners[0].VoronoiCenter.x-this.corners[2].VoronoiCenter.x
+            const Lsidediffz=this.corners[0].VoronoiCenter.z-this.corners[1].VoronoiCenter.z
+            const Lsidediffx=this.corners[0].VoronoiCenter.x-this.corners[1].VoronoiCenter.x
+            const Rsidediffz=this.corners[2].VoronoiCenter.z-this.corners[3].VoronoiCenter.z
+            const Rsidediffx=this.corners[2].VoronoiCenter.x-this.corners[3].VoronoiCenter.x
+            const botdiffz=this.corners[1].VoronoiCenter.z-this.corners[3].VoronoiCenter.z
+            const botdiffx=this.corners[1].VoronoiCenter.x-this.corners[3].VoronoiCenter.x
+            
+            return []
+        }
     }
 
     class Corner{//change name to corner
@@ -261,9 +328,11 @@
 
         createCenter(WorldPosition){//within 4 by 4 space plot a point, future calculations can adjust according to WorldPosition
             //this.VoronoiCenter=new THREE.Vector3( 0,0, 0 )
-            this.VoronoiCenter.x=WorldPosition.x+(Math.random()*4)-2 //from -2 to 2
+            this.VoronoiCenter.x=(Math.round(((WorldPosition.x+(Math.random()*4)-2)/resolution))*10)*resolution/10 //from -2 to 2
             this.VoronoiCenter.y=WorldPosition.y
-            this.VoronoiCenter.z=WorldPosition.z+(Math.random()*4)-2
+            this.VoronoiCenter.z=(Math.round(((WorldPosition.z+(Math.random()*4)-2)/resolution))*10)*resolution/10
+
+            //(Math.round((this.corners[0].VoronoiCenter.x/resolution))*10)*resolution/10
         }
 
         inform(){
