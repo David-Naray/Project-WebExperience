@@ -251,50 +251,141 @@
             {
             var vertices=[]
             var i=0;
+            var shift;//represents the horizontal shift
             for(var h=0;h<chunk_height;h++){//you are looping the height of the chunk from the highest point to the lowest
                 //then you need to loop over each position in the array as each corresponds to a layer of height
                 //this should match the chunk height, so an array_length is interchangeable
                 for(var w=0;w<num_width[h];w++){
-                    vertices[i]=w*resolution//+startingCoord.x  //first component x?
+                    vertices[i]=w*resolution-shift//+startingCoord.x  //first component x?
                     i++
-                    vertices[i]=startingCoord.y
+                    vertices[i]=1//startingCoord.y
                     i++
                     vertices[i]=h*resolution+highestLowest_corners[0].VoronoiCenter.z//+startingCoord.z
                     i++ 
                 }
+            
+            
             }
+            var j=0
+            indices=[]
+            for(let r=0; r<chunk_height-1;r++){//since you are going through each layer
+                for(let b=0; b<num_width[r]-1;b++){//similarly to 
+                    //topleft triangle
+                    indices[j]=r*numberz +b 
+                    j++
+                    indices[j]=r*numberz+b+1 //row progress(*x per row)
+                    j++
+                    indices[j]=r*numberz+b+numberz
+                    j++
+                    //console.log(j)
+                    //bottom left triangle
+                    indices[j]=r*numberz+b+1
+                    j++
+                    indices[j]=r*numberz+b+numberz+1
+                    j++
+                    indices[j]=r*numberz+b+numberz
+                    //console.log(j)
+                    j++
+                }
+            }
+
+
             }
 
         }
     
         highestLowest(){
-            var highest_corner;
-            var lowest_corner;
+
+            const Lsidediffz=this.cleanCalc(this.corners[0].VoronoiCenter.z,this.corners[1].VoronoiCenter.z)
+            const Lsidediffx=this.cleanCalc(this.corners[0].VoronoiCenter.x,this.corners[1].VoronoiCenter.x)
+            const Rsidediffz=this.cleanCalc(this.corners[2].VoronoiCenter.z,this.corners[3].VoronoiCenter.z)
+            const Rsidediffx=this.cleanCalc(this.corners[2].VoronoiCenter.x,this.corners[3].VoronoiCenter.x)
+            var array=[]
             if(this.corners[0].VoronoiCenter.z<=this.corners[2].VoronoiCenter.z){
-                highest_corner=this.corners[0]
+                array[0]=this.corners[0]//highest
+                array[2]=Math.round(Rsidediffz/Rsidediffx);
+                array[3]=Math.round(Lsidediffz/Lsidediffx);
+                array[4]=Rsidediffz
+                array[5]=Lsidediffz
+
             }else{
-                highest_corner=this.corners[2]
+                array[0]=this.corners[2]//highest
+                array[2]=Math.round(Lsidediffz/Lsidediffx);
+                array[3]=Math.round(Rsidediffz/Rsidediffx);
+                array[4]=Lsidediffz
+                array[5]=Rsidediffz
             }
             if(this.corners[1].VoronoiCenter.z>=this.corners[3].VoronoiCenter.z){
-                lowest_corner=this.corners[1]
+                array[1]=this.corners[1]//lowest
             }else{
-                lowest_corner=this.corners[3]
+                array[1]=this.corners[3]//lowest
             }
-            return [highest_corner,lowest_corner]
+            return array
 
         }
         
         calcDistributions(){
-            const topdiffz=this.corners[0].VoronoiCenter.z-this.corners[2].VoronoiCenter.z
-            const topdiffx=this.corners[0].VoronoiCenter.x-this.corners[2].VoronoiCenter.x
-            const Lsidediffz=this.corners[0].VoronoiCenter.z-this.corners[1].VoronoiCenter.z
-            const Lsidediffx=this.corners[0].VoronoiCenter.x-this.corners[1].VoronoiCenter.x
-            const Rsidediffz=this.corners[2].VoronoiCenter.z-this.corners[3].VoronoiCenter.z
-            const Rsidediffx=this.corners[2].VoronoiCenter.x-this.corners[3].VoronoiCenter.x
-            const botdiffz=this.corners[1].VoronoiCenter.z-this.corners[3].VoronoiCenter.z
-            const botdiffx=this.corners[1].VoronoiCenter.x-this.corners[3].VoronoiCenter.x
+            const topdiffz=this.cleanCalc(this.corners[0].VoronoiCenter.z,this.corners[2].VoronoiCenter.z)
+            const topdiffx=this.cleanCalc(this.corners[0].VoronoiCenter.x,this.corners[2].VoronoiCenter.x)
+            const Lsidediffz=this.cleanCalc(this.corners[0].VoronoiCenter.z,this.corners[1].VoronoiCenter.z)
+            //const Lsidediffx=this.cleanCalc(this.corners[0].VoronoiCenter.x,this.corners[1].VoronoiCenter.x)
+            const Rsidediffz=this.cleanCalc(this.corners[2].VoronoiCenter.z,this.corners[3].VoronoiCenter.z)
+            //const Rsidediffx=this.cleanCalc(this.corners[2].VoronoiCenter.x,this.corners[3].VoronoiCenter.x)
+            const botdiffz=this.cleanCalc(this.corners[1].VoronoiCenter.z,this.corners[3].VoronoiCenter.z)
+            const botdiffx=this.cleanCalc(this.corners[1].VoronoiCenter.x,this.corners[3].VoronoiCenter.x)
             
-            return []
+            //split top is how many grids to be created across for its gradients since...
+                //dividing the width of the tops by the height difference of tops we see how many we should add
+                //extra per layer down since each layer is like a component of that height, adding on the length
+                //of squares of the previous
+            //the sides augment this split top number
+                //the side on the starting corner adjusts the draw position and adjusts the number according to its own gradient
+                //the latter side will add or subtract from the number
+            //the bottom gradient takes effect after the shortest of sides has been fulffilled
+                //taking over and adjusting the start with the longer side also still being in effect
+            var widths=[]
+            const highestLowest_corners=this.highestLowest();
+            const chunk_height=Math.round((Math.round(highestLowest_corners[1].VoronoiCenter.z*10))-Math.round(highestLowest_corners[0].VoronoiCenter.z*10))/10
+            
+            const split_top=Math.round(topdiffx/topdiffz);
+            const split_bot=Math.round(botdiffx/botdiffz);
+            //const split_Lside=Math.round(Lsidediffz/Lsidediffx);
+            //const split_Rside=Math.round(Rsidediffz/Rsidediffx);
+
+            const prio_side=highestLowest_corners[2];
+            const other_side=highestLowest_corners[3];
+            var number_for_the_row_width=0;
+            //var start_pos=highestLowest_corners[0].VoronoiCenter;
+            for(var i=0;i<chunk_height;i++){
+                //i needs to be <= the top difference but the extra adjustment should happen every multiple of split_top
+                if(i<=Math.round(topdiffz) && i%split_top==0){
+                    number_for_the_row_width+=1
+                }
+                //priority side affects start location and also number, similary for its split
+                if(i<=Math.round(highestLowest_corners[4])  && i%Math.round(prio_side)==0){
+                    //eg. prio is right side if lower corner of side more left than upper then 
+                        //it should take away from the width hence the sign
+                    number_for_the_row_width+=Math.sign(prio_side)*1
+                }
+                //other side starts affecting when i> top difference, akin to prioside with adjusitng number
+                //adjustment must occur in immediate affect, every other_side, adjust by 1 grid
+                if(i>Math.round(topdiffz) && i<=Math.round(highestLowest_corners[5]) &&(i-topdiffz)%other_side==0){
+                    number_for_the_row_width+=Math.sign(prio_side)*1
+                }
+                //finally, the bottom must take effect starting at the highest of the lower corners
+                    //it can go either way since we do not know which of the bottom points are lower
+                    //the bottom section then must be in control then of its own direction
+                if(i>=(chunk_height-botdiffz)&& (i-(chunk_height-botdiffz))%split_bot==0){
+                    number_for_the_row_width+=Math.sign(prio_side)*1
+                }
+                widths[i]=number_for_the_row_width
+            }
+
+            return widths
+        }
+        
+        cleanCalc(one, two){
+            return Math.abs(one)-Math.abs(two)
         }
     }
 
