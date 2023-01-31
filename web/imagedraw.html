@@ -267,23 +267,23 @@
             
             }
             var j=0
-            indices=[]
+            var indices=[]
             for(let r=0; r<chunk_height-1;r++){//since you are going through each layer
                 for(let b=0; b<num_width[r]-1;b++){//similarly to 
                     //topleft triangle
-                    indices[j]=r*numberz +b 
+                    indices[j]=0//r*numberz +b 
                     j++
-                    indices[j]=r*numberz+b+1 //row progress(*x per row)
+                    indices[j]=0//r*numberz+b+1 //row progress(*x per row)
                     j++
-                    indices[j]=r*numberz+b+numberz
+                    indices[j]=0//r*numberz+b+numberz
                     j++
                     //console.log(j)
                     //bottom left triangle
-                    indices[j]=r*numberz+b+1
+                    indices[j]=0//r*numberz+b+1
                     j++
-                    indices[j]=r*numberz+b+numberz+1
+                    indices[j]=0//r*numberz+b+numberz+1
                     j++
-                    indices[j]=r*numberz+b+numberz
+                    indices[j]=0//r*numberz+b+numberz
                     //console.log(j)
                     j++
                 }
