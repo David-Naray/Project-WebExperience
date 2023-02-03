@@ -216,8 +216,8 @@
 
             const highestLowest_corners=this.highestLowest();
             
-            const chunk_height=Math.round((Math.round(highestLowest_corners[1].VoronoiCenter.z*10))-Math.round(highestLowest_corners[0].VoronoiCenter.z*10))/10
-            
+            //const chunk_height=Math.round((Math.round(highestLowest_corners[1].VoronoiCenter.z*10))-Math.round(highestLowest_corners[0].VoronoiCenter.z*10))/10
+            const chunk_height=Math.trunc((highestLowest_corners[1].VoronoiCenter.z-highestLowest_corners[0].VoronoiCenter.z)*10)
             const num_width=this.calcDistributions()//how many verts across per row of the chunk height
             
             {
@@ -233,7 +233,8 @@
             for(var h=0;h<chunk_height;h++){//you are looping the height of the chunk from the highest point to the lowest
                 //then you need to loop over each position in the array as each corresponds to a layer of height
                 //this should match the chunk height, so an array_length is interchangeable
-                for(var w=0;w<num_width[0][h];w++){
+                for(var w=0;w<num_width[0][h];w++){//loops for the width
+                    //w*resolution*num_width[1][h] dictates how far along the width, in direction towards latter side
                     vertices[i]=w*resolution+num_width[1][h]*resolution+highestLowest_corners[0].VoronoiCenter.x//+startingCoord.x  //first component x?
                     i++
                     vertices[i]=0//startingCoord.y
@@ -305,9 +306,9 @@
             var Lsign;
             if(this.corners[0].VoronoiCenter.x>this.corners[1].VoronoiCenter.x){
                 //this means the left side is has edge slanted to the left
-                Lsign=-1
-            }else{
                 Lsign=1
+            }else{
+                Lsign=-1
             }
             if(this.corners[2].VoronoiCenter.x>this.corners[3].VoronoiCenter.x){
                 //this means the left side is has edge slanted to the left
@@ -363,7 +364,7 @@
             
             const highestLowest_corners=this.highestLowest();
             const chunk_height=Math.trunc((highestLowest_corners[1].VoronoiCenter.z-highestLowest_corners[0].VoronoiCenter.z)*10)
-            
+            //console.log(chunk_height)
             const split_top=Math.abs(Math.round(topdiffx/topdiffz))
             const split_bot=Math.abs(Math.round(botdiffx/botdiffz));
             const split_prio=highestLowest_corners[2]
@@ -374,10 +375,10 @@
             var number_for_the_row_width=0;
             var shift=0
 
-            console.log(split_prio)
+            console.log(split_other)
             for(var i=0;i<chunk_height;i++){//for every layer
                 //i needs to be <= the top difference but the extra adjustment should happen every multiple of split_top
-                if(i<=topdiffz){
+                if(i<topdiffz){
                     number_for_the_row_width+=split_top//expanding from a point so its +
                 }                
                 //now for the bottom, get chunk height take away bot diff, left with the the finale section..
@@ -387,14 +388,14 @@
                 }
                 //*the sides*//
                 //priority side affects start location and also number, similary for its split
-                if(i<Math.round(prio_side_height)){
-                    number_for_the_row_width+=split_prio
-                    shift+=highestLowest_corners[6]
+                if(i<Math.round(prio_side_height*10) && i%split_prio==0){
+                    number_for_the_row_width+=highestLowest_corners[6]
+                    shift+=-highestLowest_corners[6]
                 }
                 //other side starts affecting when i> top difference, akin to prioside with adjusitng number
                 //adjustment must occur in immediate affect, every other_side, adjust by 1 grid
-                if(i>topdiffz && i<other_side_height){
-                    number_for_the_row_width+=split_other
+                if(i>topdiffz && i<Math.round(other_side_height*10)+topdiffz && (i-topdiffz)%split_other==0){
+                    number_for_the_row_width+=highestLowest_corners[7]*split_other
                 }
 
                 widths[i]=number_for_the_row_width
