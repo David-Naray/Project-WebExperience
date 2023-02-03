@@ -132,25 +132,15 @@
         draw(){
             this.drawBounds()
 
+            this.populateArray()
+
+            {
+            var numberx=Math.trunc(((Math.round((this.corners[2].VoronoiCenter.x/resolution))*10)*resolution/10-(Math.round((this.corners[0].VoronoiCenter.x/resolution))*10)*resolution/10)*10)
+            var numberz=Math.trunc(((Math.round((this.corners[3].VoronoiCenter.z/resolution))*10)*resolution/10-(Math.round((this.corners[0].VoronoiCenter.z/resolution))*10)*resolution/10)*10)
             var startingCoord=new THREE.Vector3( 0,0, 0 )
             //find leftmost corner     
             startingCoord.x=(Math.round((this.corners[0].VoronoiCenter.x/resolution))*10)*resolution/10
-            startingCoord.z=(Math.round((this.corners[0].VoronoiCenter.z/resolution))*10)*resolution/10
-            //var valid_
-            for(var i=0;i<4;i++){
-
-            }
-            //adjust so these values lie on/between for x, the right corner, for z the corner below
-            var numberx=Math.trunc(((Math.round((this.corners[2].VoronoiCenter.x/resolution))*10)*resolution/10-(Math.round((this.corners[0].VoronoiCenter.x/resolution))*10)*resolution/10)*10)
-            var numberz=Math.trunc(((Math.round((this.corners[3].VoronoiCenter.z/resolution))*10)*resolution/10-(Math.round((this.corners[0].VoronoiCenter.z/resolution))*10)*resolution/10)*10)
-            //console.log(numberx)
-
-
-            //console.log(highest_corner.VoronoiCenter.z,this.corners[0].VoronoiCenter.z,this.corners[2].VoronoiCenter.z)
-
-            this.populateArray()
-
-            {            
+            startingCoord.z=(Math.round((this.corners[0].VoronoiCenter.z/resolution))*10)*resolution/10            
             var vertices =[]
             var indices=[]
             var Coord;
@@ -186,8 +176,7 @@
                     j++
                 }
             }
-            }
-            
+            }  
             {//Formation of chunk
             const geometrys = new THREE.BufferGeometry();
             geometrys.setIndex(indices)
@@ -196,7 +185,7 @@
             geometrys.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array( vertices), 3 ) );
             const materialsss = new THREE.MeshBasicMaterial( { color: color,side:THREE.DoubleSide,wireframe: true } );
             const meshss = new THREE.Mesh( geometrys, materialsss );
-            scene.add(meshss)
+            //scene.add(meshss)
             }
         }
 
@@ -223,72 +212,83 @@
         }
 
         populateArray(){
-            //console.log(Math.sign(topdiffz)*(Math.round(Math.abs(topdiffz/resolution)+1)))
-            //const m=Math.sign(topdiffz)*(Math.round(Math.abs(topdiffz/resolution)+1))
-            //const z=Math.sign(topdiffx)*(Math.round(Math.abs(topdiffx/resolution)+1))
-            
             //starting at the furthest point up, iterating the distance down until completion
 
             const highestLowest_corners=this.highestLowest();
-            //console.log(highestLowest_corners[0])
             
             const chunk_height=Math.round((Math.round(highestLowest_corners[1].VoronoiCenter.z*10))-Math.round(highestLowest_corners[0].VoronoiCenter.z*10))/10
             
             const num_width=this.calcDistributions()//how many verts across per row of the chunk height
-
-            //num_width
-                //top diff, you divide by resol and you know how many across per row work down that line
-                //the left side, similarly says how many more or less per row and dictates a new drawing start
-                //the right side adds on to a row or takes away
-                //the bottom, just as the top you have the height and resol, boom
-            
-            
-            
-            //console.log(this.corners[0].VoronoiCenter.x,this.corners[2].VoronoiCenter.x)
-            //console.log(topdiffx,m)
-            //console.log(Math.round(z/m))//if topdiff negative draw left of the highest point, a matter of using the sign
             
             {
+            const geometryk = new THREE.BoxGeometry( 0.05, 0.05, 0.05 );
+            
+            const color = new THREE.Color( 0xffffff );
+            color.setHex( Math.random() * 0xffffff );
+            const materialssss = new THREE.MeshBasicMaterial( { color: color,} );
             var vertices=[]
             var i=0;
-            var shift;//represents the horizontal shift
+            var shift=0;//represents the horizontal shift
+            //console.log(chunk_height,num_width)
             for(var h=0;h<chunk_height;h++){//you are looping the height of the chunk from the highest point to the lowest
                 //then you need to loop over each position in the array as each corresponds to a layer of height
                 //this should match the chunk height, so an array_length is interchangeable
-                for(var w=0;w<num_width[h];w++){
-                    vertices[i]=w*resolution-shift//+startingCoord.x  //first component x?
+                for(var w=0;w<num_width[0][h];w++){
+                    vertices[i]=w*resolution+num_width[1][h]*resolution+highestLowest_corners[0].VoronoiCenter.x//+startingCoord.x  //first component x?
                     i++
-                    vertices[i]=1//startingCoord.y
+                    vertices[i]=0//startingCoord.y
                     i++
                     vertices[i]=h*resolution+highestLowest_corners[0].VoronoiCenter.z//+startingCoord.z
-                    i++ 
+                    i++            
+                    const cubek = new THREE.Mesh( geometryk, materialssss );
+                    const a = new THREE.Vector3( 1, 0, 0 );
+                    cubek.position.set(vertices[i-3],vertices[i-2],vertices[i-1])
+                    scene.add( cubek ); 
                 }
             
             
             }
             var j=0
             var indices=[]
+            var sum_widths=0
             for(let r=0; r<chunk_height-1;r++){//since you are going through each layer
                 for(let b=0; b<num_width[r]-1;b++){//similarly to 
                     //topleft triangle
-                    indices[j]=0//r*numberz +b 
+                    
+                    indices[j]=sum_widths+b//r*numberz +b 
                     j++
-                    indices[j]=0//r*numberz+b+1 //row progress(*x per row)
+                    indices[j]=num_width[r]+b+1//r*numberz+b+1 //row progress(*x per row)
                     j++
-                    indices[j]=0//r*numberz+b+numberz
+                    indices[j]=num_width[r]+b+num_width[r+1]//r*numberz+b+numberz
                     j++
                     //console.log(j)
                     //bottom left triangle
-                    indices[j]=0//r*numberz+b+1
+                    indices[j]=num_width[r]+b+1//r*numberz+b+1
                     j++
-                    indices[j]=0//r*numberz+b+numberz+1
+                    indices[j]=num_width[r]+b+num_width[r+1]+1//r*numberz+b+numberz+1
                     j++
-                    indices[j]=0//r*numberz+b+numberz
+                    indices[j]=num_width[r]+b+num_width[r+1]//r*numberz+b+numberz
                     //console.log(j)
                     j++
+                    
                 }
+                sum_widths+=num_width[r]
             }
+            //identified bugs in thought
+                //the code the above is coded for is based of drawing rectangles a square 
+                //it goes along the width -1 since to make a square it needs to have a connection, since the code assumes these verts exist
+                //this changing of width per row means that some squares cannot be made however the code assumes that every vert
+                //has another vert underneath much like a rectangle, of course there could be no vertice underneath
+                    //so rows need to be more than 2 in width to be drawn standalone
 
+            // const geometrys = new THREE.BufferGeometry();
+            // geometrys.setIndex(indices)
+            // const color = new THREE.Color( 0xffffff );
+            // color.setHex( Math.random() * 0xffffff );
+            // geometrys.setAttribute( 'position', new THREE.BufferAttribute( new Float32Array( vertices), 3 ) );
+            // const materialsss = new THREE.MeshBasicMaterial( { color: color,side:THREE.DoubleSide,wireframe: true } );
+            // const meshss = new THREE.Mesh( geometrys, materialsss );
+            // scene.add(meshss)
 
             }
 
@@ -301,91 +301,111 @@
             const Rsidediffz=this.cleanCalc(this.corners[2].VoronoiCenter.z,this.corners[3].VoronoiCenter.z)
             const Rsidediffx=this.cleanCalc(this.corners[2].VoronoiCenter.x,this.corners[3].VoronoiCenter.x)
             var array=[]
+            var Rsign;
+            var Lsign;
+            if(this.corners[0].VoronoiCenter.x>this.corners[1].VoronoiCenter.x){
+                //this means the left side is has edge slanted to the left
+                Lsign=-1
+            }else{
+                Lsign=1
+            }
+            if(this.corners[2].VoronoiCenter.x>this.corners[3].VoronoiCenter.x){
+                //this means the left side is has edge slanted to the left
+                Rsign=1
+            }else{
+                Rsign=-1
+            }
+            //if topleft corner has less z or equal then it is more forward then the top right
+                //array[0] is the most foward ie z, vertice of the chunk, here it is [0]
+                //array[1] is the lowest corner of the chunk, similarly checking for z value but reverse
+                //array[2] is how many vertices accross for the height of the edge L,Right ie, shift and increase
+                //array[3] is similarly calculating for the latter edge L,Right ie, shift and increase
+                //array[4] is saying that since the top left is the highest, then the left dictates the shift
+                //array[5] is the latter and merely affects the width, not the shift
+                //array[6] is the direction of shift for the priority side and to decrease increase
+                //array[7] is sign to increase or decrease for the latter side
             if(this.corners[0].VoronoiCenter.z<=this.corners[2].VoronoiCenter.z){
                 array[0]=this.corners[0]//highest
-                array[2]=Math.round(Rsidediffz/Rsidediffx);
-                array[3]=Math.round(Lsidediffz/Lsidediffx);
-                array[4]=Rsidediffz
-                array[5]=Lsidediffz
+                array[2]=Math.abs(Math.round(Lsidediffz/Lsidediffx))
+                array[3]=Math.abs(Math.round(Rsidediffz/Rsidediffx));
+                array[4]=Math.abs(Lsidediffz)
+                array[5]=Math.abs(Rsidediffz)
+                array[6]=Lsign
+                array[7]=Rsign;
 
             }else{
                 array[0]=this.corners[2]//highest
-                array[2]=Math.round(Lsidediffz/Lsidediffx);
-                array[3]=Math.round(Rsidediffz/Rsidediffx);
-                array[4]=Lsidediffz
-                array[5]=Rsidediffz
+                array[2]=Math.abs(Math.round(Rsidediffz/Rsidediffx));
+                array[3]=Math.abs(Math.round(Lsidediffz/Lsidediffx));
+                array[4]=Math.abs(Rsidediffz)
+                array[5]=Math.abs(Lsidediffz)
+                array[6]=Rsign
+                array[7]=Lsign;
             }
             if(this.corners[1].VoronoiCenter.z>=this.corners[3].VoronoiCenter.z){
                 array[1]=this.corners[1]//lowest
             }else{
                 array[1]=this.corners[3]//lowest
-            }
+            }                
+
             return array
 
         }
         
         calcDistributions(){
-            const topdiffz=this.cleanCalc(this.corners[0].VoronoiCenter.z,this.corners[2].VoronoiCenter.z)
-            const topdiffx=this.cleanCalc(this.corners[0].VoronoiCenter.x,this.corners[2].VoronoiCenter.x)
-            const Lsidediffz=this.cleanCalc(this.corners[0].VoronoiCenter.z,this.corners[1].VoronoiCenter.z)
-            //const Lsidediffx=this.cleanCalc(this.corners[0].VoronoiCenter.x,this.corners[1].VoronoiCenter.x)
-            const Rsidediffz=this.cleanCalc(this.corners[2].VoronoiCenter.z,this.corners[3].VoronoiCenter.z)
-            //const Rsidediffx=this.cleanCalc(this.corners[2].VoronoiCenter.x,this.corners[3].VoronoiCenter.x)
-            const botdiffz=this.cleanCalc(this.corners[1].VoronoiCenter.z,this.corners[3].VoronoiCenter.z)
-            const botdiffx=this.cleanCalc(this.corners[1].VoronoiCenter.x,this.corners[3].VoronoiCenter.x)
-            
-            //split top is how many grids to be created across for its gradients since...
-                //dividing the width of the tops by the height difference of tops we see how many we should add
-                //extra per layer down since each layer is like a component of that height, adding on the length
-                //of squares of the previous
-            //the sides augment this split top number
-                //the side on the starting corner adjusts the draw position and adjusts the number according to its own gradient
-                //the latter side will add or subtract from the number
-            //the bottom gradient takes effect after the shortest of sides has been fulffilled
-                //taking over and adjusting the start with the longer side also still being in effect
-            var widths=[]
-            const highestLowest_corners=this.highestLowest();
-            const chunk_height=Math.round((Math.round(highestLowest_corners[1].VoronoiCenter.z*10))-Math.round(highestLowest_corners[0].VoronoiCenter.z*10))/10
-            
-            const split_top=Math.round(topdiffx/topdiffz);
-            const split_bot=Math.round(botdiffx/botdiffz);
-            //const split_Lside=Math.round(Lsidediffz/Lsidediffx);
-            //const split_Rside=Math.round(Rsidediffz/Rsidediffx);
+            const topdiffz=Math.abs(Math.round(this.cleanCalc(this.corners[0].VoronoiCenter.z,this.corners[2].VoronoiCenter.z)*10))
+            const topdiffx=Math.abs(Math.round(this.cleanCalc(this.corners[0].VoronoiCenter.x,this.corners[2].VoronoiCenter.x)*10))
+            const botdiffz=Math.abs(Math.round(this.cleanCalc(this.corners[1].VoronoiCenter.z,this.corners[3].VoronoiCenter.z)*10))
+            const botdiffx=Math.abs(Math.round(this.cleanCalc(this.corners[1].VoronoiCenter.x,this.corners[3].VoronoiCenter.x)*10))
 
-            const prio_side=highestLowest_corners[2];
-            const other_side=highestLowest_corners[3];
+            var widths=[]//the width to draw 
+            var shifts=[]//+- x value to shift by from the highest point x value
+            
+            const highestLowest_corners=this.highestLowest();
+            const chunk_height=Math.trunc((highestLowest_corners[1].VoronoiCenter.z-highestLowest_corners[0].VoronoiCenter.z)*10)
+            
+            const split_top=Math.abs(Math.round(topdiffx/topdiffz))
+            const split_bot=Math.abs(Math.round(botdiffx/botdiffz));
+            const split_prio=highestLowest_corners[2]
+            const split_other=highestLowest_corners[3]
+            const prio_side_height=highestLowest_corners[4]
+            const other_side_height=highestLowest_corners[5]
+            
             var number_for_the_row_width=0;
-            //var start_pos=highestLowest_corners[0].VoronoiCenter;
-            for(var i=0;i<chunk_height;i++){
+            var shift=0
+
+            console.log(split_prio)
+            for(var i=0;i<chunk_height;i++){//for every layer
                 //i needs to be <= the top difference but the extra adjustment should happen every multiple of split_top
-                if(i<=Math.round(topdiffz) && i%split_top==0){
-                    number_for_the_row_width+=1
+                if(i<=topdiffz){
+                    number_for_the_row_width+=split_top//expanding from a point so its +
+                }                
+                //now for the bottom, get chunk height take away bot diff, left with the the finale section..
+                //since it gathers to a point, it makes sense that along the bottom edge the width decreases..
+                if(i>(chunk_height-botdiffz)){
+                    number_for_the_row_width-=split_bot
                 }
+                //*the sides*//
                 //priority side affects start location and also number, similary for its split
-                if(i<=Math.round(highestLowest_corners[4])  && i%Math.round(prio_side)==0){
-                    //eg. prio is right side if lower corner of side more left than upper then 
-                        //it should take away from the width hence the sign
-                    number_for_the_row_width+=Math.sign(prio_side)*1
+                if(i<Math.round(prio_side_height)){
+                    number_for_the_row_width+=split_prio
+                    shift+=highestLowest_corners[6]
                 }
                 //other side starts affecting when i> top difference, akin to prioside with adjusitng number
                 //adjustment must occur in immediate affect, every other_side, adjust by 1 grid
-                if(i>Math.round(topdiffz) && i<=Math.round(highestLowest_corners[5]) &&(i-topdiffz)%other_side==0){
-                    number_for_the_row_width+=Math.sign(prio_side)*1
+                if(i>topdiffz && i<other_side_height){
+                    number_for_the_row_width+=split_other
                 }
-                //finally, the bottom must take effect starting at the highest of the lower corners
-                    //it can go either way since we do not know which of the bottom points are lower
-                    //the bottom section then must be in control then of its own direction
-                if(i>=(chunk_height-botdiffz)&& (i-(chunk_height-botdiffz))%split_bot==0){
-                    number_for_the_row_width+=Math.sign(prio_side)*1
-                }
+
                 widths[i]=number_for_the_row_width
+                shifts[i]=shift;
             }
 
-            return widths
+            return [widths,shifts]
         }
         
         cleanCalc(one, two){
-            return Math.abs(one)-Math.abs(two)
+            return one-two
         }
     }
 
