@@ -235,7 +235,7 @@
                 //this should match the chunk height, so an array_length is interchangeable
                 for(var w=0;w<num_width[0][h];w++){//loops for the width
                     //w*resolution*num_width[1][h] dictates how far along the width, in direction towards latter side
-                    vertices[i]=w*resolution+num_width[1][h]*resolution+highestLowest_corners[0].VoronoiCenter.x//+startingCoord.x  //first component x?
+                    vertices[i]=w*resolution*Math.sign(num_width[1][h])+num_width[1][h]*resolution+highestLowest_corners[0].VoronoiCenter.x//+startingCoord.x  //first component x?
                     i++
                     vertices[i]=0//startingCoord.y
                     i++
@@ -395,7 +395,7 @@
                 //other side starts affecting when i> top difference, akin to prioside with adjusitng number
                 //adjustment must occur in immediate affect, every other_side, adjust by 1 grid
                 if(i>topdiffz && i<Math.round(other_side_height*10)+topdiffz && (i-topdiffz)%split_other==0){
-                    number_for_the_row_width+=highestLowest_corners[7]*split_other
+                    number_for_the_row_width+=-highestLowest_corners[7]
                 }
 
                 widths[i]=number_for_the_row_width
