@@ -400,8 +400,18 @@
                 //now for the bottom, get chunk height take away bot diff, left with the the finale section..
                 //since it gathers to a point, it makes sense that along the bottom edge the width decreases..
                 if(i>(chunk_height-botdiffz)){
+                    //if 
                     number_for_the_row_width=Math.abs(number_for_the_row_width)
                     number_for_the_row_width-=split_bot
+                    //if the lowest point is on the other side of the highest point then shift by split_bot
+                        //in the direction to the other side of the highest point
+                    const compLtoR=highestLowest_corners[0]==this.corners[0]&& highestLowest_corners[1]==this.corners[0]
+                    const compRtoL=highestLowest_corners[0]==this.corners[2]&& highestLowest_corners[1]==this.corners[1]
+                    console.log(compLtoR,compRtoL)
+                    if( compLtoR ||compRtoL){
+                        shift+=-highestLowest_corners[9]*split_bot
+                    }
+                    
                 }
                 //*the sides*//
                 //priority side affects start location and also number, similary for its split
@@ -410,7 +420,7 @@
                     number_for_the_row_width=Math.abs(number_for_the_row_width)
                     number_for_the_row_width+=highestLowest_corners[6]*highestLowest_corners[9]
                     shift+=highestLowest_corners[6]//to the left -1, to the right +1
-                    console.log(shift)
+                    //console.log(shift)
                 }
                 //other side starts affecting when i> top difference, akin to prioside with adjusitng number
                 //adjustment must occur in immediate affect, every other_side, adjust by 1 grid
