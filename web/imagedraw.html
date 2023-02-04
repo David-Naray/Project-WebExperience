@@ -405,11 +405,14 @@
                     number_for_the_row_width-=split_bot
                     //if the lowest point is on the other side of the highest point then shift by split_bot
                         //in the direction to the other side of the highest point
-                    const compLtoR=highestLowest_corners[0]==this.corners[0]&& highestLowest_corners[1]==this.corners[0]
+                    const compLtoR=highestLowest_corners[0]==this.corners[0]&& highestLowest_corners[1]==this.corners[3]
                     const compRtoL=highestLowest_corners[0]==this.corners[2]&& highestLowest_corners[1]==this.corners[1]
                     console.log(compLtoR,compRtoL)
-                    if( compLtoR ||compRtoL){
-                        shift+=-highestLowest_corners[9]*split_bot
+                    if( compLtoR){//if highest on left side and lowest on right  then 
+                        shift+=Math.abs(split_bot)
+                    }
+                    else if(compRtoL){
+                        shift-=Math.abs(split_bot)
                     }
                     
                 }
