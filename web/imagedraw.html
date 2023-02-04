@@ -416,7 +416,7 @@
                 //adjustment must occur in immediate affect, every other_side, adjust by 1 grid
                 if(i>topdiffz && i<(chunk_height-botdiffz) && (i-topdiffz)%split_other==0){
                     number_for_the_row_width=Math.abs(number_for_the_row_width)
-                    number_for_the_row_width+=highestLowest_corners[7]*highestLowest_corners[9]
+                    number_for_the_row_width-=highestLowest_corners[7]*highestLowest_corners[9]
                 }
 
                 widths[i]=Math.abs(number_for_the_row_width)
