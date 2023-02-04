@@ -67,7 +67,12 @@
 
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0xffffff);
-
+        const geometryak = new THREE.BoxGeometry( 1, 1, 1 );
+        const materialak = new THREE.MeshBasicMaterial( {color: 0x000000} );
+        const cubeak = new THREE.Mesh( geometryak, materialak );
+        cubeak.position.x+=10
+        cubeak.position.z+=10
+        scene.add( cubeak );
 
 
         const fov = 75;
@@ -235,7 +240,7 @@
                 //this should match the chunk height, so an array_length is interchangeable
                 for(var w=0;w<num_width[0][h];w++){//loops for the width
                     //w*resolution*num_width[1][h] dictates how far along the width, in direction towards latter side
-                    vertices[i]=w*resolution*Math.sign(num_width[1][h])+num_width[1][h]*resolution+highestLowest_corners[0].VoronoiCenter.x//+startingCoord.x  //first component x?
+                    vertices[i]=w*resolution*highestLowest_corners[8]+num_width[1][h]*resolution+highestLowest_corners[0].VoronoiCenter.x//+startingCoord.x  //first component x?
                     i++
                     vertices[i]=0//startingCoord.y
                     i++
@@ -306,15 +311,18 @@
             var Lsign;
             if(this.corners[0].VoronoiCenter.x>this.corners[1].VoronoiCenter.x){
                 //this means the left side is has edge slanted to the left
-                Lsign=1
-            }else{
+                //this means that you are increasing vertices and shifting left (if its prio)
+                //if its not prio, it is still increasing vertice count
                 Lsign=-1
+            }else{
+                Lsign=1
             }
             if(this.corners[2].VoronoiCenter.x>this.corners[3].VoronoiCenter.x){
                 //this means the left side is has edge slanted to the left
-                Rsign=1
-            }else{
+                //this means that you are decreasing vertices and shifting left (if its prio)
                 Rsign=-1
+            }else{
+                Rsign=1
             }
             //if topleft corner has less z or equal then it is more forward then the top right
                 //array[0] is the most foward ie z, vertice of the chunk, here it is [0]
@@ -325,6 +333,8 @@
                 //array[5] is the latter and merely affects the width, not the shift
                 //array[6] is the direction of shift for the priority side and to decrease increase
                 //array[7] is sign to increase or decrease for the latter side
+                //array[8] gives direction to generate the vertices
+    
             if(this.corners[0].VoronoiCenter.z<=this.corners[2].VoronoiCenter.z){
                 array[0]=this.corners[0]//highest
                 array[2]=Math.abs(Math.round(Lsidediffz/Lsidediffx))
@@ -333,6 +343,8 @@
                 array[5]=Math.abs(Rsidediffz)
                 array[6]=Lsign
                 array[7]=Rsign;
+                array[8]=1
+                array[9]=-1
 
             }else{
                 array[0]=this.corners[2]//highest
@@ -342,6 +354,8 @@
                 array[5]=Math.abs(Lsidediffz)
                 array[6]=Rsign
                 array[7]=Lsign;
+                array[8]=-1
+                array[9]=1
             }
             if(this.corners[1].VoronoiCenter.z>=this.corners[3].VoronoiCenter.z){
                 array[1]=this.corners[1]//lowest
@@ -375,30 +389,38 @@
             var number_for_the_row_width=0;
             var shift=0
 
-            console.log(split_other)
+            //console.log(split_other)
             for(var i=0;i<chunk_height;i++){//for every layer
+                //console.log(Math.round(prio_side_height*10))
                 //i needs to be <= the top difference but the extra adjustment should happen every multiple of split_top
                 if(i<topdiffz){
+                    number_for_the_row_width=Math.abs(number_for_the_row_width)
                     number_for_the_row_width+=split_top//expanding from a point so its +
                 }                
                 //now for the bottom, get chunk height take away bot diff, left with the the finale section..
                 //since it gathers to a point, it makes sense that along the bottom edge the width decreases..
                 if(i>(chunk_height-botdiffz)){
+                    number_for_the_row_width=Math.abs(number_for_the_row_width)
                     number_for_the_row_width-=split_bot
                 }
                 //*the sides*//
                 //priority side affects start location and also number, similary for its split
                 if(i<Math.round(prio_side_height*10) && i%split_prio==0){
-                    number_for_the_row_width+=highestLowest_corners[6]
-                    shift+=-highestLowest_corners[6]
+                    //console.log("HELLO")
+                    number_for_the_row_width=Math.abs(number_for_the_row_width)
+                    number_for_the_row_width+=highestLowest_corners[6]*highestLowest_corners[9]
+                    shift+=highestLowest_corners[6]//to the left -1, to the right +1
+                    console.log(shift)
                 }
                 //other side starts affecting when i> top difference, akin to prioside with adjusitng number
                 //adjustment must occur in immediate affect, every other_side, adjust by 1 grid
-                if(i>topdiffz && i<Math.round(other_side_height*10)+topdiffz && (i-topdiffz)%split_other==0){
-                    number_for_the_row_width+=-highestLowest_corners[7]
+                if(i>topdiffz && i<(chunk_height-botdiffz) && (i-topdiffz)%split_other==0){
+                    number_for_the_row_width=Math.abs(number_for_the_row_width)
+                    number_for_the_row_width+=highestLowest_corners[7]*highestLowest_corners[9]
                 }
 
-                widths[i]=number_for_the_row_width
+                widths[i]=Math.abs(number_for_the_row_width)
+                //console.log(number_for_the_row_width)
                 shifts[i]=shift;
             }
 
@@ -507,7 +529,7 @@
                     plane.position.y=-0.5;
                     plane.position.z=w*4 -8+cube.position.z;
                     plane.rotation.x=Math.PI/2;
-                    scene.add(plane);
+                    //scene.add(plane);
                     this.LoadedGrids.set((h.toString()+w.toString()),plane)
                     //console.log(h.toString()+w.toString())
                     var pos=new THREE.Vector3( h*4 -8+cube.position.x, 0, w*4 -8+cube.position.z )
