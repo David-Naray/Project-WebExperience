@@ -427,7 +427,7 @@
                 }
                 //other side starts affecting when i> top difference, akin to prioside with adjusitng number
                 //adjustment must occur in immediate affect, every other_side, adjust by 1 grid
-                if(i>topdiffz && i<(chunk_height-botdiffz) && (i-topdiffz)%split_other==0){
+                if(i>topdiffz && i<(topdiffz+other_side_height*10) && (i-topdiffz)%split_other==0){
                     number_for_the_row_width=Math.abs(number_for_the_row_width)
                     number_for_the_row_width-=highestLowest_corners[7]*highestLowest_corners[9]
                 }
