@@ -337,8 +337,11 @@
     
             if(this.corners[0].VoronoiCenter.z<=this.corners[2].VoronoiCenter.z){
                 array[0]=this.corners[0]//highest
-                array[2]=Math.abs(Math.round(Lsidediffz/Lsidediffx))
-                array[3]=Math.abs(Math.round(Rsidediffz/Rsidediffx));
+                //array[2]=Math.abs(Math.round(Lsidediffz/Lsidediffx))
+                //array[3]=Math.abs(Math.round(Rsidediffz/Rsidediffx));
+                array[2]=Math.abs(Lsidediffz/Lsidediffx)
+                array[3]=Math.abs(Rsidediffz/Rsidediffx);
+
                 array[4]=Math.abs(Lsidediffz)
                 array[5]=Math.abs(Rsidediffz)
                 array[6]=Lsign
@@ -348,8 +351,11 @@
 
             }else{
                 array[0]=this.corners[2]//highest
-                array[2]=Math.abs(Math.round(Rsidediffz/Rsidediffx));
-                array[3]=Math.abs(Math.round(Lsidediffz/Lsidediffx));
+                //array[2]=Math.abs(Math.round(Rsidediffz/Rsidediffx));
+                //array[3]=Math.abs(Math.round(Lsidediffz/Lsidediffx));
+                array[2]=Math.abs(Rsidediffz/Rsidediffx);
+                array[3]=Math.abs(Lsidediffz/Lsidediffx);
+                
                 array[4]=Math.abs(Rsidediffz)
                 array[5]=Math.abs(Lsidediffz)
                 array[6]=Rsign
@@ -380,34 +386,57 @@
             const chunk_height=Math.trunc((highestLowest_corners[1].VoronoiCenter.z-highestLowest_corners[0].VoronoiCenter.z)*10)
             //console.log(chunk_height)
             const split_top=Math.abs(Math.round(topdiffx/topdiffz))
+            //console.log((topdiffx/topdiffz))
+            const split_top2=Math.abs(topdiffx/topdiffz)
+
             const split_bot=Math.abs(Math.round(botdiffx/botdiffz));
+            const split_bot2=Math.abs(botdiffx/botdiffz);
+
             const split_prio=highestLowest_corners[2]
             const split_other=highestLowest_corners[3]
+            //console.log(split_prio,split_other)
             const prio_side_height=highestLowest_corners[4]
             const other_side_height=highestLowest_corners[5]
             
             var number_for_the_row_width=0;
             var shift=0
-
+            var top_extra=0
+            var niblets=0
+            var niblets_other=0
+            var k=-1;
+            var l=0
+            var m=0
             //console.log(split_other)
             for(var i=0;i<chunk_height;i++){//for every layer
-                //console.log(Math.round(prio_side_height*10))
-                //i needs to be <= the top difference but the extra adjustment should happen every multiple of split_top
-                if(i<topdiffz){
+
+                //topdiff really defines the default width that gets added onto and subtracted off of
+                if(i<topdiffz){//between the top corners,increases in width, expands from point
                     number_for_the_row_width=Math.abs(number_for_the_row_width)
-                    number_for_the_row_width+=split_top//expanding from a point so its +
-                }                
-                //now for the bottom, get chunk height take away bot diff, left with the the finale section..
-                //since it gathers to a point, it makes sense that along the bottom edge the width decreases..
-                if(i>(chunk_height-botdiffz)){
+                    
+                    //console.log(Math.trunc(top_extra),top_extra)
+                    top_extra+=split_top2-Math.trunc(split_top2)
+                    //number_for_the_row_width+=split_top//expanding from a point so its +
+                    number_for_the_row_width+=Math.trunc(split_top2)//+Math.trunc(top_extra)
+                    if(top_extra>=1){
+                        //number_for_the_row_width=Math.abs(number_for_the_row_width)
+                        //top_extra-=1
+                        number_for_the_row_width+=1//*highestLowest_corners[6]
+                        top_extra-=1
+                    }  
+                    k++
+
+                }                    
+               
+                if(i>(chunk_height-botdiffz)){//bottom corners, decrease of width since, trends to a point
                     //if 
                     number_for_the_row_width=Math.abs(number_for_the_row_width)
-                    number_for_the_row_width-=split_bot
+                    //number_for_the_row_width-=split_bot
+                    number_for_the_row_width=Math.trunc(split_bot*(chunk_height-i))
                     //if the lowest point is on the other side of the highest point then shift by split_bot
                         //in the direction to the other side of the highest point
                     const compLtoR=highestLowest_corners[0]==this.corners[0]&& highestLowest_corners[1]==this.corners[3]
                     const compRtoL=highestLowest_corners[0]==this.corners[2]&& highestLowest_corners[1]==this.corners[1]
-                    console.log(compLtoR,compRtoL)
+                    //console.log(compLtoR,compRtoL)
                     if( compLtoR){//if highest on left side and lowest on right  then 
                         shift+=Math.abs(split_bot)
                     }
@@ -418,23 +447,68 @@
                 }
                 //*the sides*//
                 //priority side affects start location and also number, similary for its split
-                if(i<Math.round(prio_side_height*10) && i%split_prio==0){
-                    //console.log("HELLO")
-                    number_for_the_row_width=Math.abs(number_for_the_row_width)
-                    number_for_the_row_width+=highestLowest_corners[6]*highestLowest_corners[9]
-                    shift+=highestLowest_corners[6]//to the left -1, to the right +1
-                    //console.log(shift)
+                
+                if(i<Math.round(prio_side_height*10)){//loops over for the layers of prioside since it starts at 0
+                    //console.log("HELLO")                    
+
+                    if(l==Math.trunc(split_prio)){//every whole number, ie the ratio of increase
+                        number_for_the_row_width=Math.abs(number_for_the_row_width)
+                        //number_for_the_row_width+=highestLowest_corners[6]*highestLowest_corners[9]
+                    
+                        number_for_the_row_width+=highestLowest_corners[6]*highestLowest_corners[9]//-highestLowest_corners[9]*Math.trunc(niblets)//*(Math.trunc(split_prio)+Math.trunc(niblets))
+                        niblets+=split_prio-Math.trunc(split_prio)
+                        shift+=highestLowest_corners[6]//*highestLowest_corners[9]
+                        l=0
+                    }
+                    if(niblets>=1){//if niblets >=1 then width must stay the same for the layer, setback l then
+                        //number_for_the_row_width=Math.abs(number_for_the_row_width)
+                        //number_for_the_row_width+=highestLowest_corners[6]*highestLowest_corners[9]
+                        niblets-=1
+                        //shift-=highestLowest_corners[6]//*highestLowest_corners[9]
+                        //number_for_the_row_width+=highestLowest_corners[6]*highestLowest_corners[9]
+                        l-=1
+                    }
+                    l++
                 }
                 //other side starts affecting when i> top difference, akin to prioside with adjusitng number
                 //adjustment must occur in immediate affect, every other_side, adjust by 1 grid
-                if(i>topdiffz && i<(topdiffz+other_side_height*10) && (i-topdiffz)%split_other==0){
-                    number_for_the_row_width=Math.abs(number_for_the_row_width)
-                    number_for_the_row_width-=highestLowest_corners[7]*highestLowest_corners[9]
+                if(i>=topdiffz && i<(topdiffz+other_side_height*10)){
+                    // && (i-topdiffz)%Math.trunc(split_other)==0){                    
+
+                    if(m==Math.trunc(split_other)){
+                        number_for_the_row_width=Math.abs(number_for_the_row_width)
+                        niblets_other+=split_other-Math.trunc(split_other)
+                        number_for_the_row_width-=highestLowest_corners[7]*highestLowest_corners[9]//*highestLowest_corners[8]//highestLowest_corners[7]*highestLowest_corners[9]//+Math.trunc(niblets_other)
+
+                        m=0
+                    }                        
+                    if(niblets_other>=1){
+                        //number_for_the_row_width+=highestLowest_corners[7]*highestLowest_corners[9]
+                        m-=1
+                        niblets_other-=1
+                    }
+                    m++
                 }
 
                 widths[i]=Math.abs(number_for_the_row_width)
                 //console.log(number_for_the_row_width)
-                shifts[i]=shift;
+                shifts[i]=shift;                    
+                                  
+                if(niblets>=1){ //theres likey a remainder to the split, this acculated remainders are accounted for
+                                    //
+                    //number_for_the_row_width=Math.abs(number_for_the_row_width)
+                    //number_for_the_row_width+=highestLowest_corners[6]
+                    //shift+=highestLowest_corners[6]
+                    //niblets-=1
+                    //shift+=highestLowest_corners[6]*highestLowest_corners[9]
+                }
+                if(niblets_other>=1){ //theres likey a remainder to the split, this acculated remainders are accounted for
+                                    //
+                    //number_for_the_row_width=Math.abs(number_for_the_row_width)
+                    //number_for_the_row_width-=highestLowest_corners[7]*highestLowest_corners[9]
+                    //shift+=highestLowest_corners[6]
+                    //niblets_other-=1
+                }
             }
 
             return [widths,shifts]
